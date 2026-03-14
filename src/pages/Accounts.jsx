@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Plus, CreditCard, Building2, Edit2, Trash2, Upload, Wallet, History } from 'lucide-react'
+import { Plus, CreditCard, Building2, Edit2, Trash2, Upload, Wallet, History, X } from 'lucide-react'
 
 export const Accounts = () => {
   const { user } = useAuth()
@@ -140,7 +140,7 @@ export const Accounts = () => {
                     <div className="history-header">
                       <h3>Histórico de Importações</h3>
                       <button onClick={() => setShowImportHistory(null)} className="btn-close-history">
-                        <Trash2 size={18} />
+                        <X size={18} />
                       </button>
                     </div>
                     {importHistory.length === 0 ? (
