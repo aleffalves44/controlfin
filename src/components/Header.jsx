@@ -19,6 +19,7 @@ export const Header = () => {
           <nav className="nav">
             <Link to="/dashboard">Dashboard</Link>
             <Link to="/accounts">Contas</Link>
+            <Link to="/transactions">Transações</Link>
             <button onClick={handleLogout} className="btn-logout">
               Sair
             </button>

@@ -6,6 +6,7 @@ import { Register } from './pages/Register'
 import { Dashboard } from './pages/Dashboard'
 import { Accounts } from './pages/Accounts'
 import { Import } from './pages/Import'
+import { Transactions } from './pages/Transactions'
 import './App.css'
 
 const ProtectedRoute = ({ children }) => {
@@ -52,6 +53,13 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Header />
           <Import />
+        </ProtectedRoute>
+      } />
+      
+      <Route path="/transactions" element={
+        <ProtectedRoute>
+          <Header />
+          <Transactions />
         </ProtectedRoute>
       } />
       
