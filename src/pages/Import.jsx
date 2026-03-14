@@ -123,6 +123,8 @@ export const Import = () => {
   }
 
   const processTransactions = () => {
+    const isCartaoCredito = account?.type === 'cartao_credito'
+    
     const processed = rawData.map(row => {
       const dateValue = row[mapping.date]
       const descValue = row[mapping.description]
@@ -167,6 +169,20 @@ export const Import = () => {
         type = 'income'
       }
 
+      if (isCartaoCredito) {
+        if (amount > 0) {
+          amount = -Math.abs(amount)
+          type = 'expense'
+        } else {
+          amount = Math.abs(amount)
+          type = 'income'
+        }
+      }
+
+      if (descValue && descValue.toLowerCase().includes('pagamento recebido')) {
+        return null
+      }
+
       const category = type === 'expense' ? getCategoryFromDescription(descValue) : 'Receita'
 
       return {
@@ -176,7 +192,7 @@ export const Import = () => {
         type,
         category
       }
-    }).filter(t => t.date && t.description)
+    }).filter(t => t && t.date && t.description)
 
     setTransactions(processed)
     setStep(3)
