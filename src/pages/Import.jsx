@@ -16,6 +16,10 @@ const generateHash = (str) => {
   return Math.abs(hash).toString(36) + str.length.toString(36)
 }
 
+const generateImportHash = () => {
+  return generateHash(Date.now().toString() + Math.random().toString(36).substring(2))
+}
+
 export const Import = () => {
   const { accountId } = useParams()
   const navigate = useNavigate()
@@ -29,6 +33,8 @@ export const Import = () => {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(false)
   const [importing, setImporting] = useState(false)
+  const [fileHash, setFileHash] = useState(null)
+  const [fileAlreadyImported, setFileAlreadyImported] = useState(false)
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -45,27 +51,46 @@ export const Import = () => {
     setAccount(data)
   }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const selectedFile = e.target.files[0]
     if (!selectedFile) return
 
     setFile(selectedFile)
     setLoading(true)
+    setFileAlreadyImported(false)
 
-    const extension = selectedFile.name.split('.').pop().toLowerCase()
+    const reader = new FileReader()
+    reader.onload = async (event) => {
+      const arrayBuffer = event.target.result
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer)
+      const hashArray = Array.from(new Uint8Array(hashBuffer))
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+      const fileHash = hashHex.substring(0, 16)
+      
+      setFileHash(fileHash)
 
-    if (extension === 'csv') {
-      Papa.parse(selectedFile, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          processData(results.data)
-        }
-      })
-    } else if (['xlsx', 'xls'].includes(extension)) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result)
+      const { data: existingImport } = await supabase
+        .from('transactions')
+        .select('import_hash')
+        .eq('import_hash', fileHash)
+        .limit(1)
+
+      if (existingImport && existingImport.length > 0) {
+        setFileAlreadyImported(true)
+      }
+
+      const extension = selectedFile.name.split('.').pop().toLowerCase()
+
+      if (extension === 'csv') {
+        Papa.parse(selectedFile, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            processData(results.data)
+          }
+        })
+      } else if (['xlsx', 'xls'].includes(extension)) {
+        const data = new Uint8Array(arrayBuffer)
         const workbook = XLSX.read(data, { type: 'array' })
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
         const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 })
@@ -81,12 +106,12 @@ export const Import = () => {
           })
           processData(rows, headers)
         }
+      } else {
+        alert('Formato não suportado. Use CSV ou Excel.')
+        setLoading(false)
       }
-      reader.readAsArrayBuffer(selectedFile)
-    } else {
-      alert('Formato não suportado. Use CSV ou Excel.')
-      setLoading(false)
     }
+    reader.readAsArrayBuffer(selectedFile)
   }
 
   const processData = (data, headers = null) => {
@@ -196,16 +221,13 @@ export const Import = () => {
 
       const category = type === 'expense' ? getCategoryFromDescription(descValue) : 'Receita'
 
-      const hashInput = `${accountId}|${date}|${descValue}|${amount}`
-      const importHash = generateHash(hashInput)
-
       return {
         date,
         description: descValue,
         amount: type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
         type,
         category,
-        importHash
+        importHash: fileHash
       }
     }).filter(t => t && t.date && t.description)
 
@@ -216,24 +238,19 @@ export const Import = () => {
   const handleImport = async () => {
     setImporting(true)
 
-    const existingHashes = transactions.map(t => t.importHash)
-    
     const { data: existing } = await supabase
       .from('transactions')
-      .select('import_hash')
-      .in('import_hash', existingHashes)
+      .select('id')
+      .eq('import_hash', fileHash)
+      .limit(1)
 
-    const duplicateCount = existing?.length || 0
-    if (duplicateCount > 0) {
-      if (!confirm(`${duplicateCount} transações já foram importadas anteriormente. Deseja importar as restantes?`)) {
-        setImporting(false)
-        return
-      }
+    if (existing && existing.length > 0) {
+      alert('Este arquivo já foi importado anteriormente.')
+      setImporting(false)
+      return
     }
 
-    const toInsert = transactions
-      .filter(t => !existing?.find(e => e.import_hash === t.importHash))
-      .map(t => ({
+    const toInsert = transactions.map(t => ({
         account_id: accountId,
         date: t.date,
         description: t.description,
@@ -304,6 +321,15 @@ export const Import = () => {
 
       {step === 1 && (
         <div className="upload-section">
+          {file && (
+            <div className="file-selected">
+              <span className="file-name">{file.name}</span>
+              {fileAlreadyImported && (
+                <span className="file-warning">⚠️ Este arquivo já foi importado</span>
+              )}
+            </div>
+          )}
+          
           <div className="upload-card">
             <div className="upload-icon">
               <FileSpreadsheet size={48} />
