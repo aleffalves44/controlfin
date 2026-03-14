@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { Header } from './components/Header'
+import { BottomNav } from './components/BottomNav'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { Dashboard } from './pages/Dashboard'
@@ -39,6 +40,7 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Header />
           <Dashboard />
+          <BottomNav />
         </ProtectedRoute>
       } />
       
@@ -46,6 +48,7 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Header />
           <Accounts />
+          <BottomNav />
         </ProtectedRoute>
       } />
       
@@ -60,6 +63,7 @@ const AppRoutes = () => {
         <ProtectedRoute>
           <Header />
           <Transactions />
+          <BottomNav />
         </ProtectedRoute>
       } />
       

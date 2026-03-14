@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getDefaultCategories } from '../utils/categorizer'
+import { Filter, X, TrendingUp, TrendingDown } from 'lucide-react'
 
 const getLastMonthDates = () => {
   const now = new Date()
@@ -180,7 +181,10 @@ export const Transactions = () => {
   return (
     <div className="transactions-page">
       <div className="page-header">
-        <h1>Transações</h1>
+        <h1>
+          <Filter size={24} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+          Transações
+        </h1>
       </div>
 
       <div className="filters-section">
@@ -276,6 +280,7 @@ export const Transactions = () => {
         </div>
 
         <button onClick={clearFilters} className="btn-secondary">
+          <X size={16} />
           Limpar Filtros
         </button>
       </div>
@@ -347,9 +352,11 @@ export const Transactions = () => {
       <div className="transactions-summary">
         <span>Total: {transactions.length} transações</span>
         <span className="income-total">
+          <TrendingUp size={16} style={{ marginRight: '0.25rem' }} />
           Receitas: {formatCurrency(transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + Math.abs(t.amount), 0))}
         </span>
         <span className="expense-total">
+          <TrendingDown size={16} style={{ marginRight: '0.25rem' }} />
           Despesas: {formatCurrency(transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0))}
         </span>
       </div>

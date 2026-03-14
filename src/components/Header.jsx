@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { LayoutDashboard, Wallet, FileText, LogOut } from 'lucide-react'
 
 export const Header = () => {
   const { user, signOut } = useAuth()
@@ -17,11 +18,20 @@ export const Header = () => {
         
         {user && (
           <nav className="nav">
-            <Link to="/dashboard">Dashboard</Link>
-            <Link to="/accounts">Contas</Link>
-            <Link to="/transactions">Transações</Link>
-            <button onClick={handleLogout} className="btn-logout">
-              Sair
+            <Link to="/dashboard" title="Dashboard">
+              <LayoutDashboard size={18} />
+              <span>Dashboard</span>
+            </Link>
+            <Link to="/accounts" title="Contas">
+              <Wallet size={18} />
+              <span>Contas</span>
+            </Link>
+            <Link to="/transactions" title="Transações">
+              <FileText size={18} />
+              <span>Transações</span>
+            </Link>
+            <button onClick={handleLogout} className="btn-logout" title="Sair">
+              <LogOut size={18} />
             </button>
           </nav>
         )}

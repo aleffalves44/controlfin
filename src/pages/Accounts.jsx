@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { Plus, CreditCard, Building2, Edit2, Trash2, Upload } from 'lucide-react'
 
 export const Accounts = () => {
   const { user } = useAuth()
@@ -77,7 +78,8 @@ export const Accounts = () => {
       <div className="page-header">
         <h1>Minhas Contas</h1>
         <button onClick={openNewModal} className="btn-primary">
-          + Nova Conta
+          <Plus size={18} />
+          Nova Conta
         </button>
       </div>
 
@@ -90,19 +92,31 @@ export const Accounts = () => {
         <div className="accounts-grid">
           {accounts.map(account => (
             <div key={account.id} className="account-card">
-              <h3>{account.name}</h3>
-              <p className="bank">{account.bank}</p>
-              <p className="account-type">
-                {account.type === 'cartao_credito' ? 'Cartão de Crédito' : 'Conta Corrente'}
-              </p>
+              <div className="account-card-header">
+                <div>
+                  <h3>{account.name}</h3>
+                  <p className="bank">{account.bank}</p>
+                </div>
+                <div className="account-type-badge">
+                  {account.type === 'cartao_credito' ? <CreditCard size={14} /> : <Building2 size={14} />}
+                  {account.type === 'cartao_credito' ? 'CC' : 'Conta'}
+                </div>
+              </div>
               <p className="balance">
-                Saldo: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(account.balance || 0)}
+                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(account.balance || 0)}
               </p>
               <div className="account-actions">
-                <button onClick={() => handleEdit(account)} className="btn-secondary">Editar</button>
-                <button onClick={() => handleDelete(account.id)} className="btn-danger">Excluir</button>
+                <button onClick={() => handleEdit(account)} className="btn-secondary">
+                  <Edit2 size={14} />
+                  Editar
+                </button>
+                <button onClick={() => handleDelete(account.id)} className="btn-danger">
+                  <Trash2 size={14} />
+                  Excluir
+                </button>
               </div>
               <a href={`/controlfin/import/${account.id}`} className="btn-import">
+                <Upload size={16} />
                 Importar Extrato
               </a>
             </div>
