@@ -41,6 +41,10 @@ jobs:
         uses: actions/configure-pages@v4
         with:
           static_site_generator: vite
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create error page
+        run: cp dist/index.html dist/404.html
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
