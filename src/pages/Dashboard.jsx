@@ -1,55 +1,32 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { TrendingDown, CreditCard, Calendar } from 'lucide-react'
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { TrendingDown, CreditCard, ChevronLeft, ChevronRight, BarChart3 } from 'lucide-react'
 
-const COLORS = ['#6C5CE7', '#00B894', '#FDCB6E', '#FF6B6B', '#A29BFE', '#74B9FF', '#FD79A8', '#E17055', '#00CEC9', '#FFEAA7']
+const COLORS = ['#6C5CE7', '#00B894', '#FDCB6E', '#FF6B6B', '#A29BFE']
 
-const MONTHS = [
-  { value: '', label: 'Todos' },
-  { value: 'current', label: 'Mês atual' },
-  { value: 'last', label: 'Mês anterior' },
-  { value: '2026-01', label: 'Janeiro 2026' },
-  { value: '2025-12', label: 'Dezembro 2025' },
-  { value: '2025-11', label: 'Novembro 2025' },
-  { value: '2025-10', label: 'Outubro 2025' },
-  { value: '2025-09', label: 'Setembro 2025' },
-  { value: '2025-08', label: 'Agosto 2025' },
-  { value: '2025-07', label: 'Julho 2025' },
-  { value: '2025-06', label: 'Junho 2025' },
-  { value: '2025-05', label: 'Maio 2025' },
-  { value: '2025-04', label: 'Abril 2025' },
-  { value: '2025-03', label: 'Março 2025' },
-  { value: '2025-02', label: 'Fevereiro 2025' },
-  { value: '2025-01', label: 'Janeiro 2025' },
+const MONTH_NAMES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
 ]
 
-const getMonthDates = (monthValue) => {
+const getInitialMonth = () => {
   const now = new Date()
-  let year, month
-
-  if (monthValue === 'current') {
-    year = now.getFullYear()
-    month = now.getMonth()
-  } else if (monthValue === 'last') {
-    year = now.getFullYear()
-    month = now.getMonth() - 1
-  } else if (monthValue) {
-    const [y, m] = monthValue.split('-')
-    year = parseInt(y)
-    month = parseInt(m) - 1
+  return {
+    year: now.getFullYear(),
+    month: now.getMonth() - 1 // Mês anterior
   }
+}
 
-  if (year !== undefined) {
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    return {
-      startDate: firstDay.toISOString().split('T')[0],
-      endDate: lastDay.toISOString().split('T')[0]
-    }
+const getMonthRange = (year, month) => {
+  const firstDay = new Date(year, month, 1)
+  const lastDay = new Date(year, month + 1, 0)
+  return {
+    startDate: firstDay.toISOString().split('T')[0],
+    endDate: lastDay.toISOString().split('T')[0],
+    monthValue: `${year}-${String(month + 1).padStart(2, '0')}`
   }
-  return { startDate: '', endDate: '' }
 }
 
 export const Dashboard = () => {
@@ -57,18 +34,18 @@ export const Dashboard = () => {
   const [accounts, setAccounts] = useState([])
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
-  const [selectedMonth, setSelectedMonth] = useState('last')
-  const [dateRange, setDateRange] = useState(getMonthDates('last'))
+  const [currentMonth, setCurrentMonth] = useState(getInitialMonth())
+  const [showAllMonths, setShowAllMonths] = useState(false)
+  const [dateRange, setDateRange] = useState(() => {
+    const { year, month } = getInitialMonth()
+    return getMonthRange(year, month)
+  })
 
   useEffect(() => {
     if (user) {
       loadData()
     }
   }, [user, dateRange])
-
-  useEffect(() => {
-    setDateRange(getMonthDates(selectedMonth))
-  }, [selectedMonth])
 
   const loadData = async () => {
     setLoading(true)
@@ -105,9 +82,46 @@ export const Dashboard = () => {
     setLoading(false)
   }
 
-  const getFilteredTransactions = () => {
-    return transactions
+  const handlePrevMonth = () => {
+    let newMonth = currentMonth.month - 1
+    let newYear = currentMonth.year
+    if (newMonth < 0) {
+      newMonth = 11
+      newYear--
+    }
+    setCurrentMonth({ year: newYear, month: newMonth })
+    setDateRange(getMonthRange(newYear, newMonth))
   }
+
+  const handleNextMonth = () => {
+    const now = new Date()
+    if (currentMonth.year > now.getFullYear() || 
+        (currentMonth.year === now.getFullYear() && currentMonth.month >= now.getMonth())) {
+      return
+    }
+    let newMonth = currentMonth.month + 1
+    let newYear = currentMonth.year
+    if (newMonth > 11) {
+      newMonth = 0
+      newYear++
+    }
+    setCurrentMonth({ year: newYear, month: newMonth })
+    setDateRange(getMonthRange(newYear, newMonth))
+  }
+
+  const handleMonthSelect = (year, month) => {
+    setCurrentMonth({ year, month })
+    setDateRange(getMonthRange(year, month))
+    setShowAllMonths(false)
+  }
+
+  const handleShowAll = () => {
+    setCurrentMonth({ year: null, month: null })
+    setDateRange({ startDate: '', endDate: '', monthValue: '' })
+    setShowAllMonths(false)
+  }
+
+  const getFilteredTransactions = () => transactions
 
   const getCategoryData = () => {
     const filtered = getFilteredTransactions()
@@ -119,23 +133,19 @@ export const Dashboard = () => {
         categories[cat] = (categories[cat] || 0) + Math.abs(t.amount)
       })
 
-    return Object.entries(categories).map(([name, value]) => ({ name, value }))
+    return Object.entries(categories)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5)
   }
 
-  const getMonthlyData = () => {
-    const filtered = getFilteredTransactions()
-    const monthly = {}
-    filtered
-      .filter(t => t.type === 'expense')
-      .forEach(t => {
-        const month = t.date.substring(0, 7)
-        monthly[month] = (monthly[month] || 0) + Math.abs(t.amount)
-      })
-
-    return Object.entries(monthly)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .slice(-6)
-      .map(([month, total]) => ({ month, total }))
+  const getTopCategories = () => {
+    const data = getCategoryData()
+    const total = data.reduce((sum, item) => sum + item.value, 0)
+    return data.map(item => ({
+      ...item,
+      percent: total > 0 ? (item.value / total * 100).toFixed(0) : 0
+    }))
   }
 
   const getTotalExpenses = () => {
@@ -144,24 +154,15 @@ export const Dashboard = () => {
       .reduce((sum, t) => sum + Math.abs(t.amount), 0)
   }
 
-  const getTotalIncome = () => {
-    return getFilteredTransactions()
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + t.amount, 0)
+  const getTransactionCount = () => {
+    return getFilteredTransactions().filter(t => t.type === 'expense').length
   }
 
-  const getBalance = () => {
-    const totalExpenses = getTotalExpenses()
-    const totalIncome = getTotalIncome()
-    const accountsBalance = accounts.reduce((sum, a) => sum + (a.balance || 0), 0)
-    return accountsBalance + totalIncome - totalExpenses
-  }
-
-  const getTopCategory = () => {
-    const categoryData = getCategoryData()
-    if (categoryData.length === 0) return '-'
-    const top = categoryData.reduce((a, b) => a.value > b.value ? a : b)
-    return top.name
+  const getTopExpense = () => {
+    const expenses = getFilteredTransactions()
+      .filter(t => t.type === 'expense')
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+    return expenses[0] || null
   }
 
   const formatCurrency = (value) => {
@@ -171,30 +172,77 @@ export const Dashboard = () => {
     }).format(value)
   }
 
+  const canGoNext = () => {
+    const now = new Date()
+    return currentMonth.year < now.getFullYear() || 
+           (currentMonth.year === now.getFullYear() && currentMonth.month < now.getMonth())
+  }
+
   if (loading) {
     return <div className="loading">Carregando...</div>
   }
 
+  const monthLabel = currentMonth.year 
+    ? `${MONTH_NAMES[currentMonth.month]} ${currentMonth.year}`
+    : 'Todos os períodos'
+
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h1>Dashboard</h1>
-        <div className="month-filter" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <Calendar size={18} style={{ color: 'var(--text-secondary)' }} />
-          <select
-            value={selectedMonth}
-            onChange={e => setSelectedMonth(e.target.value)}
-            style={{ minWidth: '160px' }}
-          >
-            {MONTHS.map(m => (
-              <option key={m.value} value={m.value}>{m.label}</option>
-            ))}
-          </select>
+      {/* Month Selector */}
+      <div className="month-selector">
+        <button onClick={handlePrevMonth} className="month-nav-btn">
+          <ChevronLeft size={24} />
+        </button>
+        
+        <div className="month-current" onClick={() => setShowAllMonths(!showAllMonths)}>
+          <span className="month-label">{monthLabel}</span>
+          <span className="month-hint">toque para mudar</span>
         </div>
+        
+        <button 
+          onClick={handleNextMonth} 
+          className={`month-nav-btn ${!canGoNext() ? 'disabled' : ''}`}
+          disabled={!canGoNext()}
+        >
+          <ChevronRight size={24} />
+        </button>
       </div>
-      
+
+      {/* Month Dropdown */}
+      {showAllMonths && (
+        <div className="month-dropdown">
+          <button 
+            className={`month-option ${!currentMonth.year ? 'active' : ''}`}
+            onClick={handleShowAll}
+          >
+            Todos os períodos
+          </button>
+          {Array.from({ length: 12 }, (_, i) => {
+            const now = new Date()
+            const year = now.getFullYear()
+            const month = now.getMonth() - i
+            let displayYear = year
+            let displayMonth = month
+            if (month < 0) {
+              displayMonth = 12 + month
+              displayYear = year - 1
+            }
+            return (
+              <button
+                key={`${displayYear}-${displayMonth}`}
+                className={`month-option ${currentMonth.year === displayYear && currentMonth.month === displayMonth ? 'active' : ''}`}
+                onClick={() => handleMonthSelect(displayYear, displayMonth)}
+              >
+                {MONTH_NAMES[displayMonth]} {displayYear}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Summary Cards */}
       <div className="summary-cards">
-        <div className="summary-card">
+        <div className="summary-card highlight">
           <div className="summary-card-header">
             <h3>Total de Gastos</h3>
             <div className="summary-card-icon red">
@@ -202,75 +250,108 @@ export const Dashboard = () => {
             </div>
           </div>
           <p className="expense">{formatCurrency(getTotalExpenses())}</p>
+          <span className="summary-sub">{getTransactionCount()} transações</span>
         </div>
+        
         <div className="summary-card">
           <div className="summary-card-header">
-            <h3>Principal Categoria</h3>
-            <div className="summary-card-icon yellow">
+            <h3>Maior Gasto</h3>
+            <div className="summary-card-icon purple">
               <CreditCard size={20} />
             </div>
           </div>
-          <p>{getTopCategory()}</p>
+          {getTopExpense() ? (
+            <>
+              <p className="expense">{formatCurrency(Math.abs(getTopExpense().amount))}</p>
+              <span className="summary-sub">{getTopExpense().description?.substring(0, 25)}...</span>
+            </>
+          ) : (
+            <p className="no-data">-</p>
+          )}
         </div>
       </div>
 
+      {/* Top Categories - Horizontal Bar */}
+      <div className="chart-card">
+        <h3>
+          <BarChart3 size={18} style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+          Top 5 Categorias
+        </h3>
+        
+        {getTopCategories().length === 0 ? (
+          <div className="empty-chart">Nenhuma categoria encontrada</div>
+        ) : (
+          <div className="top-categories">
+            {getTopCategories().map((cat, index) => (
+              <div key={cat.name} className="category-row">
+                <div className="category-info">
+                  <span className="category-rank">{index + 1}</span>
+                  <span className="category-name">{cat.name}</span>
+                </div>
+                <div className="category-bar-container">
+                  <div 
+                    className="category-bar" 
+                    style={{ 
+                      width: `${cat.percent}%`,
+                      backgroundColor: COLORS[index % COLORS.length]
+                    }}
+                  />
+                </div>
+                <span className="category-value">{formatCurrency(cat.value)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Pie Chart */}
       {transactions.length === 0 ? (
         <div className="empty-state">
           <p>Nenhuma transação encontrada.</p>
           <p>Importe seu extrato na página de Contas.</p>
         </div>
       ) : (
-        <div className="charts-container">
-          <div className="chart-card">
-            <h3>Gastos por Categoria</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={getCategoryData()}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {getCategoryData().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value) => formatCurrency(value)}
-                  contentStyle={{ 
-                    background: '#1A1A24', 
-                    border: '1px solid #2D2D3A',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="chart-card">
-            <h3>Evolução de Gastos</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={getMonthlyData()}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2D2D3A" />
-                <XAxis dataKey="month" stroke="#6B6B7B" />
-                <YAxis stroke="#6B6B7B" />
-                <Tooltip 
-                  formatter={(value) => formatCurrency(value)}
-                  contentStyle={{ 
-                    background: '#1A1A24', 
-                    border: '1px solid #2D2D3A',
-                    borderRadius: '8px'
-                  }}
-                />
-                <Line type="monotone" dataKey="total" stroke="#6C5CE7" strokeWidth={2} dot={{ fill: '#6C5CE7' }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
+        <div className="chart-card">
+          <h3>Distribuição por Categoria</h3>
+          <ResponsiveContainer width="100%" height={320}>
+            <PieChart>
+              <Pie
+                data={getCategoryData()}
+                cx="50%"
+                cy="50%"
+                labelLine={false}
+                label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+                outerRadius={80}
+                innerRadius={45}
+                fill="#8884d8"
+                dataKey="value"
+                label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }) => {
+                  const RADIAN = Math.PI / 180
+                  const radius = innerRadius + (outerRadius - innerRadius) * 0.5
+                  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+                  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+                  return percent > 0.05 ? (
+                    <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize={12}>
+                      {`${(percent * 100).toFixed(0)}%`}
+                    </text>
+                  ) : null
+                }}
+              >
+                {getCategoryData().map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                formatter={(value, name) => [formatCurrency(value), name]}
+                contentStyle={{ 
+                  background: '#1A1A24', 
+                  border: '1px solid #2D2D3A',
+                  borderRadius: '8px'
+                }}
+              />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
       )}
     </div>
