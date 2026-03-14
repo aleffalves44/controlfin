@@ -185,12 +185,17 @@ export const Import = () => {
 
       const category = type === 'expense' ? getCategoryFromDescription(descValue) : 'Receita'
 
+      const importDate = new Date().toISOString().split('T')[0]
+      const hashInput = `${accountId}|${date}|${descValue}|${amount}`
+      const importHash = btoa(hashInput).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32)
+
       return {
         date,
         description: descValue,
         amount: type === 'expense' ? -Math.abs(amount) : Math.abs(amount),
         type,
-        category
+        category,
+        importHash
       }
     }).filter(t => t && t.date && t.description)
 
@@ -201,14 +206,32 @@ export const Import = () => {
   const handleImport = async () => {
     setImporting(true)
 
-    const toInsert = transactions.map(t => ({
-      account_id: accountId,
-      date: t.date,
-      description: t.description,
-      amount: t.amount,
-      type: t.type,
-      category: t.category
-    }))
+    const existingHashes = transactions.map(t => t.importHash)
+    
+    const { data: existing } = await supabase
+      .from('transactions')
+      .select('import_hash')
+      .in('import_hash', existingHashes)
+
+    const duplicateCount = existing?.length || 0
+    if (duplicateCount > 0) {
+      if (!confirm(`${duplicateCount} transações já foram importadas anteriormente. Deseja importar as restantes?`)) {
+        setImporting(false)
+        return
+      }
+    }
+
+    const toInsert = transactions
+      .filter(t => !existing?.find(e => e.import_hash === t.importHash))
+      .map(t => ({
+        account_id: accountId,
+        date: t.date,
+        description: t.description,
+        amount: t.amount,
+        type: t.type,
+        category: t.category,
+        import_hash: t.importHash
+      }))
 
     const { error } = await supabase
       .from('transactions')
@@ -217,7 +240,12 @@ export const Import = () => {
     if (error) {
       alert('Erro ao importar: ' + error.message)
     } else {
-      alert(`${toInsert.length} transações importadas com sucesso!`)
+      const skipped = transactions.length - toInsert.length
+      if (skipped > 0) {
+        alert(`${toInsert.length} transações importadas! ${skipped} duplicadas foram ignoradas.`)
+      } else {
+        alert(`${toInsert.length} transações importadas com sucesso!`)
+      }
       navigate('/accounts')
     }
 

@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   amount DECIMAL(15,2) NOT NULL,
   type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
   category TEXT,
+  import_hash TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -66,3 +67,4 @@ CREATE INDEX IF NOT EXISTS idx_accounts_user_id ON accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_account_id ON transactions(account_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 CREATE INDEX IF NOT EXISTS idx_transactions_category ON transactions(category);
+CREATE INDEX IF NOT EXISTS idx_transactions_import_hash ON transactions(import_hash);
