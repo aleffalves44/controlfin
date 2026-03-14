@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Plus, CreditCard, Building2, Edit2, Trash2, Upload } from 'lucide-react'
+import { Plus, CreditCard, Building2, Edit2, Trash2, Upload, Wallet } from 'lucide-react'
 
 export const Accounts = () => {
   const { user } = useAuth()
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [formData, setFormData] = useState({ name: '', bank: '', type: 'conta_corrente', balance: 0 })
+  const [formData, setFormData] = useState({ name: '', bank: '', type: 'conta_corrente' })
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
@@ -35,22 +35,22 @@ export const Accounts = () => {
     if (editingId) {
       await supabase
         .from('accounts')
-        .update({ name: formData.name, bank: formData.bank, type: formData.type, balance: formData.balance })
+        .update({ name: formData.name, bank: formData.bank, type: formData.type })
         .eq('id', editingId)
     } else {
       await supabase
         .from('accounts')
-        .insert({ user_id: user.id, name: formData.name, bank: formData.bank, type: formData.type, balance: formData.balance })
+        .insert({ user_id: user.id, name: formData.name, bank: formData.bank, type: formData.type })
     }
 
-    setFormData({ name: '', bank: '', type: 'conta_corrente', balance: 0 })
+    setFormData({ name: '', bank: '', type: 'conta_corrente' })
     setEditingId(null)
     setShowModal(false)
     loadAccounts()
   }
 
   const handleEdit = (account) => {
-    setFormData({ name: account.name, bank: account.bank, type: account.type || 'conta_corrente', balance: account.balance })
+    setFormData({ name: account.name, bank: account.bank, type: account.type || 'conta_corrente' })
     setEditingId(account.id)
     setShowModal(true)
   }
@@ -64,7 +64,7 @@ export const Accounts = () => {
   }
 
   const openNewModal = () => {
-    setFormData({ name: '', bank: '', type: 'conta_corrente', balance: 0 })
+    setFormData({ name: '', bank: '', type: 'conta_corrente' })
     setEditingId(null)
     setShowModal(true)
   }
@@ -75,53 +75,52 @@ export const Accounts = () => {
 
   return (
     <div className="accounts-page">
-      <div className="page-header">
-        <h1>Minhas Contas</h1>
-        <button onClick={openNewModal} className="btn-primary">
-          <Plus size={18} />
-          Nova Conta
-        </button>
-      </div>
-
       {accounts.length === 0 ? (
         <div className="empty-state">
+          <Wallet size={48} style={{ opacity: 0.3, marginBottom: '1rem' }} />
           <p>Nenhuma conta cadastrada.</p>
           <p>Adicione uma conta para começar.</p>
+          <button onClick={openNewModal} className="btn-primary" style={{ marginTop: '1.5rem' }}>
+            <Plus size={18} />
+            Adicionar Conta
+          </button>
         </div>
       ) : (
-        <div className="accounts-grid">
-          {accounts.map(account => (
-            <div key={account.id} className="account-card">
-              <div className="account-card-header">
-                <div>
-                  <h3>{account.name}</h3>
-                  <p className="bank">{account.bank}</p>
+        <>
+          <button onClick={openNewModal} className="btn-add-account">
+            <Plus size={20} />
+            Adicionar Conta
+          </button>
+
+          <div className="accounts-grid">
+            {accounts.map(account => (
+              <div key={account.id} className="account-card">
+                <div className="account-card-header">
+                  <div className={`account-icon ${account.type === 'cartao_credito' ? 'card' : 'bank'}`}>
+                    {account.type === 'cartao_credito' ? <CreditCard size={24} /> : <Building2 size={24} />}
+                  </div>
+                  <div className="account-info">
+                    <h3>{account.name}</h3>
+                    <p className="bank">{account.bank}</p>
+                  </div>
+                  <div className="account-actions-menu">
+                    <button onClick={() => handleEdit(account)} className="btn-icon" title="Editar">
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => handleDelete(account.id)} className="btn-icon danger" title="Excluir">
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
-                <div className="account-type-badge">
-                  {account.type === 'cartao_credito' ? <CreditCard size={14} /> : <Building2 size={14} />}
-                  {account.type === 'cartao_credito' ? 'CC' : 'Conta'}
-                </div>
+                
+                <a href={`/controlfin/import/${account.id}`} className="btn-import">
+                  <Upload size={18} />
+                  Importar Extrato
+                </a>
               </div>
-              <p className="balance">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(account.balance || 0)}
-              </p>
-              <div className="account-actions">
-                <button onClick={() => handleEdit(account)} className="btn-secondary">
-                  <Edit2 size={14} />
-                  Editar
-                </button>
-                <button onClick={() => handleDelete(account.id)} className="btn-danger">
-                  <Trash2 size={14} />
-                  Excluir
-                </button>
-              </div>
-              <a href={`/controlfin/import/${account.id}`} className="btn-import">
-                <Upload size={16} />
-                Importar Extrato
-              </a>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </>
       )}
 
       {showModal && (
@@ -130,15 +129,38 @@ export const Accounts = () => {
             <h2>{editingId ? 'Editar Conta' : 'Nova Conta'}</h2>
             <form onSubmit={handleSubmit}>
               <div className="form-group">
+                <label>Tipo da Conta</label>
+                <div className="type-selector">
+                  <button
+                    type="button"
+                    className={`type-option ${formData.type === 'conta_corrente' ? 'active' : ''}`}
+                    onClick={() => setFormData({ ...formData, type: 'conta_corrente' })}
+                  >
+                    <Building2 size={20} />
+                    <span>Conta Corrente</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`type-option ${formData.type === 'cartao_credito' ? 'active' : ''}`}
+                    onClick={() => setFormData({ ...formData, type: 'cartao_credito' })}
+                  >
+                    <CreditCard size={20} />
+                    <span>Cartão de Crédito</span>
+                  </button>
+                </div>
+              </div>
+              
+              <div className="form-group">
                 <label>Nome da Conta</label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={e => setFormData({ ...formData, name: e.target.value })}
                   required
-                  placeholder="Ex: Conta Corrente"
+                  placeholder="Ex: Minha Conta Principal"
                 />
               </div>
+              
               <div className="form-group">
                 <label>Banco</label>
                 <input
@@ -149,26 +171,7 @@ export const Accounts = () => {
                   placeholder="Ex: Nubank, Itaú, Banco do Brasil"
                 />
               </div>
-              <div className="form-group">
-                <label>Tipo da Conta</label>
-                <select
-                  value={formData.type}
-                  onChange={e => setFormData({ ...formData, type: e.target.value })}
-                  required
-                >
-                  <option value="conta_corrente">Conta Corrente</option>
-                  <option value="cartao_credito">Cartão de Crédito</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Saldo Inicial</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.balance}
-                  onChange={e => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
-                />
-              </div>
+              
               <div className="modal-actions">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">
                   Cancelar

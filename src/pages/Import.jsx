@@ -4,6 +4,17 @@ import { supabase } from '../lib/supabase'
 import { getCategoryFromDescription, getDefaultCategories } from '../utils/categorizer'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
+import { Upload, FileSpreadsheet, ChevronRight, Check, ArrowLeft, Save } from 'lucide-react'
+
+const generateHash = (str) => {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash
+  }
+  return Math.abs(hash).toString(36) + str.length.toString(36)
+}
 
 export const Import = () => {
   const { accountId } = useParams()
@@ -185,9 +196,8 @@ export const Import = () => {
 
       const category = type === 'expense' ? getCategoryFromDescription(descValue) : 'Receita'
 
-      const importDate = new Date().toISOString().split('T')[0]
       const hashInput = `${accountId}|${date}|${descValue}|${amount}`
-      const importHash = btoa(hashInput).replace(/[^a-zA-Z0-9]/g, '').substring(0, 32)
+      const importHash = generateHash(hashInput)
 
       return {
         date,
@@ -260,177 +270,222 @@ export const Import = () => {
 
   const categories = getDefaultCategories()
 
+  const isStepComplete = (stepNum) => {
+    if (stepNum < step) return true
+    if (stepNum === step) return 'active'
+    return false
+  }
+
   return (
     <div className="import-page">
-      <div className="page-header">
-        <h1>Importar Extrato</h1>
-        {account && <p>Conta: {account.name} - {account.bank}</p>}
+      {/* Step Indicator */}
+      <div className="steps-indicator">
+        <div className={`step ${isStepComplete(1) === true ? 'complete' : isStepComplete(1)}`}>
+          <div className="step-icon">
+            {isStepComplete(1) === true ? <Check size={16} /> : '1'}
+          </div>
+          <span>Arquivo</span>
+        </div>
+        <div className="step-line"></div>
+        <div className={`step ${isStepComplete(2) === true ? 'complete' : isStepComplete(2)}`}>
+          <div className="step-icon">
+            {isStepComplete(2) === true ? <Check size={16} /> : '2'}
+          </div>
+          <span>Mapeamento</span>
+        </div>
+        <div className="step-line"></div>
+        <div className={`step ${isStepComplete(3) === true ? 'complete' : isStepComplete(3)}`}>
+          <div className="step-icon">
+            {isStepComplete(3) === true ? <Check size={16} /> : '3'}
+          </div>
+          <span>Revisão</span>
+        </div>
       </div>
 
       {step === 1 && (
         <div className="upload-section">
-          <div 
-            className="upload-area"
-            onClick={() => fileInputRef.current?.click()}
-          >
+          <div className="upload-card">
+            <div className="upload-icon">
+              <FileSpreadsheet size={48} />
+            </div>
+            <h3>Selecione o arquivo</h3>
+            <p>Escolha o arquivo do seu extrato bancário</p>
+            
             <input
               ref={fileInputRef}
               type="file"
               accept=".csv,.xlsx,.xls"
               onChange={handleFileChange}
-              style={{ display: 'none' }}
+              id="file-upload"
+              className="file-input"
             />
-            <p>Clique para selecionar ou arraste o arquivo</p>
-            <p className="sub-text">Formatos aceitos: CSV, Excel (.xlsx, .xls)</p>
+            <label htmlFor="file-upload" className="btn-upload">
+              <Upload size={18} />
+              Selecionar Arquivo
+            </label>
+            
+            <span className="upload-formats">CSV, Excel (.xlsx, .xls)</span>
           </div>
         </div>
       )}
 
       {step === 2 && (
         <div className="mapping-section">
-          <h2>Mapeamento de Colunas</h2>
-          <p className="sub-text">Selecione quais colunas correspondem a cada campo</p>
+          <div className="mapping-card">
+            <h3>Mapeamento de Colunas</h3>
+            <p>Associe as colunas do arquivo aos campos do sistema</p>
 
-          <button onClick={autoDetectColumns} className="btn-secondary auto-detect">
-            Auto-detectar Colunas
-          </button>
+            <button onClick={autoDetectColumns} className="btn-auto-detect">
+              <span>✨</span> Auto-detectar
+            </button>
 
-          <div className="mapping-grid">
-            <div className="form-group">
-              <label>Data *</label>
-              <select
-                value={mapping.date}
-                onChange={e => setMapping({ ...mapping, date: e.target.value })}
-                required
-              >
-                <option value="">Selecione</option>
-                {columns.map(col => (
-                  <option key={col} value={col}>{col}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Descrição *</label>
-              <select
-                value={mapping.description}
-                onChange={e => setMapping({ ...mapping, description: e.target.value })}
-                required
-              >
-                <option value="">Selecione</option>
-                {columns.map(col => (
-                  <option key={col} value={col}>{col}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Valor *</label>
-              <select
-                value={mapping.amount}
-                onChange={e => setMapping({ ...mapping, amount: e.target.value })}
-                required
-              >
-                <option value="">Selecione</option>
-                {columns.map(col => (
-                  <option key={col} value={col}>{col}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group">
-              <label>Tipo (opcional)</label>
-              <select
-                value={mapping.type}
-                onChange={e => setMapping({ ...mapping, type: e.target.value })}
-              >
-                <option value="">Selecione</option>
-                {columns.map(col => (
-                  <option key={col} value={col}>{col}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="preview-section">
-            <h3>Preview (primeiras 5 linhas)</h3>
-            <table className="preview-table">
-              <thead>
-                <tr>
+            <div className="mapping-fields">
+              <div className="mapping-field">
+                <label>Data</label>
+                <select
+                  value={mapping.date}
+                  onChange={e => setMapping({ ...mapping, date: e.target.value })}
+                  required
+                >
+                  <option value="">Selecione</option>
                   {columns.map(col => (
-                    <th key={col}>{col}</th>
+                    <option key={col} value={col}>{col}</option>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {preview.map((row, i) => (
-                  <tr key={i}>
-                    {columns.map(col => (
-                      <td key={col}>{row[col]}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </select>
+              </div>
 
-          <div className="step-actions">
-            <button onClick={() => { setStep(1); setFile(null) }} className="btn-secondary">
-              Voltar
-            </button>
-            <button 
-              onClick={processTransactions}
-              disabled={!mapping.date || !mapping.description || !mapping.amount}
-              className="btn-primary"
-            >
-              Processar
-            </button>
+              <div className="mapping-field">
+                <label>Descrição</label>
+                <select
+                  value={mapping.description}
+                  onChange={e => setMapping({ ...mapping, description: e.target.value })}
+                  required
+                >
+                  <option value="">Selecione</option>
+                  {columns.map(col => (
+                    <option key={col} value={col}>{col}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mapping-field">
+                <label>Valor</label>
+                <select
+                  value={mapping.amount}
+                  onChange={e => setMapping({ ...mapping, amount: e.target.value })}
+                  required
+                >
+                  <option value="">Selecione</option>
+                  {columns.map(col => (
+                    <option key={col} value={col}>{col}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mapping-field">
+                <label>Tipo (opcional)</label>
+                <select
+                  value={mapping.type}
+                  onChange={e => setMapping({ ...mapping, type: e.target.value })}
+                >
+                  <option value="">Selecione</option>
+                  {columns.map(col => (
+                    <option key={col} value={col}>{col}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="preview-mini">
+              <h4>Preview: {file?.name}</h4>
+              <div className="preview-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      {columns.slice(0, 4).map(col => (
+                        <th key={col}>{col}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {preview.slice(0, 3).map((row, i) => (
+                      <tr key={i}>
+                        {columns.slice(0, 4).map(col => (
+                          <td key={col}>{String(row[col]).substring(0, 20)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="step-actions">
+              <button onClick={() => { setStep(1); setFile(null) }} className="btn-secondary">
+                <ArrowLeft size={18} />
+                Voltar
+              </button>
+              <button 
+                onClick={processTransactions}
+                disabled={!mapping.date || !mapping.description || !mapping.amount}
+                className="btn-primary"
+              >
+                Continuar
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {step === 3 && (
         <div className="review-section">
-          <h2>Revisar Transações</h2>
-          <p className="sub-text">{transactions.length} transações encontradas</p>
+          <div className="review-card">
+            <div className="review-header">
+              <h3>Revisar Transações</h3>
+              <span className="transaction-count">{transactions.length} encontradas</span>
+            </div>
 
-          <div className="transactions-list">
-            {transactions.slice(0, 50).map((t, i) => (
-              <div key={i} className="transaction-item">
-                <div className="transaction-info">
-                  <span className="date">{t.date}</span>
-                  <span className="description">{t.description}</span>
+            <div className="transactions-review">
+              {transactions.slice(0, 30).map((t, i) => (
+                <div key={i} className="transaction-review-item">
+                  <div className="review-info">
+                    <span className="review-date">{t.date}</span>
+                    <span className="review-desc">{t.description}</span>
+                  </div>
+                  <div className="review-right">
+                    <span className={`review-amount ${t.type}`}>
+                      {t.type === 'expense' ? '-' : '+'}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Math.abs(t.amount))}
+                    </span>
+                    {t.type === 'expense' && (
+                      <select
+                        value={t.category}
+                        onChange={e => updateCategory(i, e.target.value)}
+                        className="review-category"
+                      >
+                        {categories.map(cat => (
+                          <option key={cat} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
                 </div>
-                <div className="transaction-details">
-                  <span className={`amount ${t.type}`}>
-                    {t.type === 'income' ? '+' : ''}{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(t.amount)}
-                  </span>
-                  {t.type === 'expense' && (
-                    <select
-                      value={t.category}
-                      onChange={e => updateCategory(i, e.target.value)}
-                      className="category-select"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat} value={cat}>{cat}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-              </div>
-            ))}
-            {transactions.length > 50 && (
-              <p className="more-items">+ {transactions.length - 50} transações</p>
-            )}
-          </div>
+              ))}
+              {transactions.length > 30 && (
+                <div className="more-transactions">+ {transactions.length - 30} transações</div>
+              )}
+            </div>
 
-          <div className="step-actions">
-            <button onClick={() => setStep(2)} className="btn-secondary">
-              Voltar
-            </button>
-            <button onClick={handleImport} disabled={importing} className="btn-primary">
-              {importing ? 'Importando...' : `Importar ${transactions.length} Transações`}
-            </button>
+            <div className="step-actions">
+              <button onClick={() => setStep(2)} className="btn-secondary">
+                <ArrowLeft size={18} />
+                Voltar
+              </button>
+              <button onClick={handleImport} disabled={importing} className="btn-primary">
+                <Save size={18} />
+                {importing ? 'Importando...' : `Importar ${transactions.length}`}
+              </button>
+            </div>
           </div>
         </div>
       )}
