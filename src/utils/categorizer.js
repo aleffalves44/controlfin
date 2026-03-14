@@ -1,13 +1,15 @@
 const DEFAULT_KEYWORDS = {
-  'Alimentação': ['mercado', 'supermercado', ' Restaurante', 'lanchonete', 'pizza', 'hamburguer', 'ifood', 'uber eats', ' Rappi', 'cafe', 'café', 'padaria', 'panificadora'],
-  'Transporte': ['uber', '99', 'taxi', 'combustível', 'gasolina', 'etanol', 'diesel', 'posto', 'metrô', 'ônibus', 'trem', 'rodoviária', 'estacionamento', 'pedágio'],
-  'Lazer': ['cinema', 'theatro', 'teatro', 'show', 'concerto', 'Netflix', 'Spotify', 'HBO', 'Disney', 'steam', 'playstation', 'xbox', 'game', 'jogo'],
+  'Alimentação': ['supermercado', 'restaurante', 'lanchonete', 'pizza', 'hamburguer', 'burger', 'pao', 'lanches', 'epa', 'chiezacoelh', 'ifood', 'uber eats', 'rappi', 'cafe', 'café', 'padaria', 'panificadora'],
+  'Transporte': ['uber', '99', 'taxi', 'combustível', 'gasolina', 'etanol', 'diesel', 'posto', 'metrô', 'ônibus', 'trem', 'rodoviária', 'estacionamento', 'pedágio', 'auto proteja'],
+  'Lazer': ['cinema', 'theatro', 'teatro', 'show', 'concerto', 'steam', 'playstation', 'xbox', 'game', 'jogo', 'beer', 'distribuidora', 'bebida', 'bar', 'adega', 'barzinho'],
   'Saúde': ['farmácia', 'drogaria', 'hospital', 'clínica', 'médico', 'dentista', 'laboratório', 'exame', 'vacina', 'plano de saúde'],
-  'Educação': ['curso', 'escola', 'universidade', 'faculdade', 'livraria', 'amazon', 'ebook', 'assinatura'],
-  'Moradia': ['aluguel', 'condomínio', 'IPTU', 'luz', 'água', 'gás', 'internet', 'telefone', 'net', 'vivo', 'claro', 'oi'],
-  'Salário': ['salário', 'holerite', 'pagamento', 'depósito', 'transferência', 'recebimento'],
-  'Investimento': ['investimento', 'rendimento', 'juros', 'aplicação', 'CDB', 'Tesouro', 'Fundos', 'Ações', 'criptomoeda', 'bitcoin'],
-  'Cartão': ['cartão', 'credito', 'débito', 'parcelamento', 'anuidade'],
+  'Educação': ['curso', 'escola', 'universidade', 'faculdade', 'livraria', 'ebook'],
+  'Moradia': ['aluguel', 'condomínio', 'iptu', 'luz', 'água', 'gás', 'copasa', 'cemig', 'telecomunicações', 'internet', 'telefone', 'vivo', 'claro', 'oi', 'plano'],
+  'Salário': ['salário', 'holerite', 'pagamento', 'depósito', 'recebimento'],
+  'Investimento': ['investimento', 'rendimento', 'juros', 'aplicação', 'cdb', 'tesouro', 'fundos', 'ações', 'criptomoeda', 'bitcoin'],
+  'Assinaturas': ['gympass', 'netflix', 'prime', 'disney', 'spotify', 'hbo', 'youtube', 'youtube premium', 'spotify'],
+  'Vestuário': ['shein', 'c&a', 'kaedu', 'puma', 'adidas', 'nike', 'calcados', 'constance', 'riachuelo', 'marisa', 'lojasa'],
+  'Presentes': [],
   'Outros': []
 }
 
