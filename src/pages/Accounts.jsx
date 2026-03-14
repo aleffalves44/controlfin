@@ -101,7 +101,7 @@ export const Accounts = () => {
                 <button onClick={() => handleEdit(account)} className="btn-secondary">Editar</button>
                 <button onClick={() => handleDelete(account.id)} className="btn-danger">Excluir</button>
               </div>
-              <a href={`/import/${account.id}`} className="btn-import">
+              <a href={`/controlfin/import/${account.id}`} className="btn-import">
                 Importar Extrato
               </a>
             </div>
