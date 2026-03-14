@@ -1,20 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import { Plus, CreditCard, Building2, Edit2, Trash2, Upload, Wallet } from 'lucide-react'
+import { Plus, CreditCard, Building2, Edit2, Trash2, Upload, Wallet, History } from 'lucide-react'
 
 export const Accounts = () => {
   const { user } = useAuth()
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showImportHistory, setShowImportHistory] = useState(null)
+  const [importHistory, setImportHistory] = useState([])
   const [formData, setFormData] = useState({ name: '', bank: '', type: 'conta_corrente' })
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
-    if (user) {
-      loadAccounts()
-    }
+    if (user) loadAccounts()
   }, [user])
 
   const loadAccounts = async () => {
@@ -27,6 +27,44 @@ export const Accounts = () => {
     
     setAccounts(data || [])
     setLoading(false)
+  }
+
+  const loadImportHistory = async (accountId) => {
+    const { data } = await supabase
+      .from('transactions')
+      .select('import_hash, date, amount')
+      .eq('account_id', accountId)
+      .not('import_hash', 'is', null)
+      .order('date', { ascending: false })
+
+    if (data) {
+      const hashes = {}
+      data.forEach(t => {
+        if (t.import_hash) {
+          if (!hashes[t.import_hash]) {
+            hashes[t.import_hash] = { hash: t.import_hash, date: t.date, count: 0, total: 0 }
+          }
+          hashes[t.import_hash].count++
+          hashes[t.import_hash].total += Math.abs(t.amount)
+        }
+      })
+      setImportHistory(Object.values(hashes).sort((a, b) => new Date(b.date) - new Date(a.date)))
+    }
+  }
+
+  const handleShowHistory = async (accountId) => {
+    await loadImportHistory(accountId)
+    setShowImportHistory(accountId)
+  }
+
+  const handleDeleteImport = async (hash, accountId) => {
+    const count = importHistory.find(h => h.hash === hash)?.count || 0
+    const total = importHistory.find(h => h.hash === hash)?.total || 0
+    
+    if (confirm(`Excluir ${count} transações? Total: R$ ${total.toFixed(2)}`)) {
+      await supabase.from('transactions').delete().eq('import_hash', hash).eq('account_id', accountId)
+      await loadImportHistory(accountId)
+    }
   }
 
   const handleSubmit = async (e) => {
@@ -69,9 +107,11 @@ export const Accounts = () => {
     setShowModal(true)
   }
 
-  if (loading) {
-    return <div className="loading">Carregando...</div>
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
+
+  if (loading) return <div className="loading">Carregando...</div>
 
   return (
     <div className="accounts-page">
@@ -95,28 +135,70 @@ export const Accounts = () => {
           <div className="accounts-grid">
             {accounts.map(account => (
               <div key={account.id} className="account-card">
-                <div className="account-card-header">
-                  <div className={`account-icon ${account.type === 'cartao_credito' ? 'card' : 'bank'}`}>
-                    {account.type === 'cartao_credito' ? <CreditCard size={24} /> : <Building2 size={24} />}
+                {showImportHistory === account.id ? (
+                  <div className="import-history-panel">
+                    <div className="history-header">
+                      <h3>Histórico de Importações</h3>
+                      <button onClick={() => setShowImportHistory(null)} className="btn-close-history">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                    {importHistory.length === 0 ? (
+                      <p className="no-history">Nenhuma importação</p>
+                    ) : (
+                      <div className="history-list">
+                        {importHistory.map(h => (
+                          <div key={h.hash} className="history-item">
+                            <div className="history-info">
+                              <span className="history-date">{new Date(h.date).toLocaleDateString('pt-BR')}</span>
+                              <span className="history-count">{h.count} transações</span>
+                            </div>
+                            <div className="history-actions">
+                              <span className="history-total">{formatCurrency(h.total)}</span>
+                              <button 
+                                onClick={() => handleDeleteImport(h.hash, account.id)}
+                                className="btn-delete-import"
+                                title="Excluir importação"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="account-info">
-                    <h3>{account.name}</h3>
-                    <p className="bank">{account.bank}</p>
-                  </div>
-                  <div className="account-actions-menu">
-                    <button onClick={() => handleEdit(account)} className="btn-icon" title="Editar">
-                      <Edit2 size={16} />
+                ) : (
+                  <>
+                    <div className="account-card-header">
+                      <div className={`account-icon ${account.type === 'cartao_credito' ? 'card' : 'bank'}`}>
+                        {account.type === 'cartao_credito' ? <CreditCard size={24} /> : <Building2 size={24} />}
+                      </div>
+                      <div className="account-info">
+                        <h3>{account.name}</h3>
+                        <p className="bank">{account.bank}</p>
+                      </div>
+                      <div className="account-actions-menu">
+                        <button onClick={() => handleEdit(account)} className="btn-icon" title="Editar">
+                          <Edit2 size={16} />
+                        </button>
+                        <button onClick={() => handleDelete(account.id)} className="btn-icon danger" title="Excluir">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <a href={`/controlfin/import/${account.id}`} className="btn-import">
+                      <Upload size={18} />
+                      Importar Extrato
+                    </a>
+
+                    <button onClick={() => handleShowHistory(account.id)} className="btn-history">
+                      <History size={16} />
+                      Ver Importações
                     </button>
-                    <button onClick={() => handleDelete(account.id)} className="btn-icon danger" title="Excluir">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
-                
-                <a href={`/controlfin/import/${account.id}`} className="btn-import">
-                  <Upload size={18} />
-                  Importar Extrato
-                </a>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -168,7 +250,7 @@ export const Accounts = () => {
                   value={formData.bank}
                   onChange={e => setFormData({ ...formData, bank: e.target.value })}
                   required
-                  placeholder="Ex: Nubank, Itaú, Banco do Brasil"
+                  placeholder="Ex: Nubank, Itaú"
                 />
               </div>
               
