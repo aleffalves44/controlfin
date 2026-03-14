@@ -31,15 +31,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Create .env
-        run: |
-          cp .env.example .env
-          sed -i "s|your_supabase_project_url|${{ secrets.VITE_SUPABASE_URL }}|g" .env
-          sed -i "s|your_supabase_anon_key|${{ secrets.VITE_SUPABASE_ANON_KEY }}|g" .env
-          cat .env
-
       - name: Build
-        run: npm run build
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" > .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+          npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
