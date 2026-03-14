@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS accounts (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
   bank TEXT NOT NULL,
+  type TEXT NOT NULL DEFAULT 'conta_corrente' CHECK (type IN ('conta_corrente', 'cartao_credito')),
   balance DECIMAL(15,2) DEFAULT 0,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

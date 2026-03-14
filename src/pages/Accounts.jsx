@@ -7,7 +7,7 @@ export const Accounts = () => {
   const [accounts, setAccounts] = useState([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [formData, setFormData] = useState({ name: '', bank: '', balance: 0 })
+  const [formData, setFormData] = useState({ name: '', bank: '', type: 'conta_corrente', balance: 0 })
   const [editingId, setEditingId] = useState(null)
 
   useEffect(() => {
@@ -31,27 +31,25 @@ export const Accounts = () => {
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-
-
     if (editingId) {
       await supabase
         .from('accounts')
-        .update({ name: formData.name, bank: formData.bank, balance: formData.balance })
+        .update({ name: formData.name, bank: formData.bank, type: formData.type, balance: formData.balance })
         .eq('id', editingId)
     } else {
       await supabase
         .from('accounts')
-        .insert({ user_id: user.id, name: formData.name, bank: formData.bank, balance: formData.balance })
+        .insert({ user_id: user.id, name: formData.name, bank: formData.bank, type: formData.type, balance: formData.balance })
     }
 
-    setFormData({ name: '', bank: '', balance: 0 })
+    setFormData({ name: '', bank: '', type: 'conta_corrente', balance: 0 })
     setEditingId(null)
     setShowModal(false)
     loadAccounts()
   }
 
   const handleEdit = (account) => {
-    setFormData({ name: account.name, bank: account.bank, balance: account.balance })
+    setFormData({ name: account.name, bank: account.bank, type: account.type || 'conta_corrente', balance: account.balance })
     setEditingId(account.id)
     setShowModal(true)
   }
@@ -65,7 +63,7 @@ export const Accounts = () => {
   }
 
   const openNewModal = () => {
-    setFormData({ name: '', bank: '', balance: 0 })
+    setFormData({ name: '', bank: '', type: 'conta_corrente', balance: 0 })
     setEditingId(null)
     setShowModal(true)
   }
@@ -94,6 +92,9 @@ export const Accounts = () => {
             <div key={account.id} className="account-card">
               <h3>{account.name}</h3>
               <p className="bank">{account.bank}</p>
+              <p className="account-type">
+                {account.type === 'cartao_credito' ? 'Cartão de Crédito' : 'Conta Corrente'}
+              </p>
               <p className="balance">
                 Saldo: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(account.balance || 0)}
               </p>
@@ -133,6 +134,17 @@ export const Accounts = () => {
                   required
                   placeholder="Ex: Nubank, Itaú, Banco do Brasil"
                 />
+              </div>
+              <div className="form-group">
+                <label>Tipo da Conta</label>
+                <select
+                  value={formData.type}
+                  onChange={e => setFormData({ ...formData, type: e.target.value })}
+                  required
+                >
+                  <option value="conta_corrente">Conta Corrente</option>
+                  <option value="cartao_credito">Cartão de Crédito</option>
+                </select>
               </div>
               <div className="form-group">
                 <label>Saldo Inicial</label>

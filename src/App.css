@@ -328,6 +328,16 @@ body {
 
 .account-card .bank {
   color: var(--text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.account-card .account-type {
+  font-size: 0.75rem;
+  color: var(--primary);
+  background: rgba(79, 70, 229, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  display: inline-block;
   margin-bottom: 0.5rem;
 }
 
