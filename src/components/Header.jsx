@@ -14,7 +14,10 @@ export const Header = () => {
   return (
     <header className="header">
       <div className="header-content">
-        <Link to="/dashboard" className="logo">ControlFin</Link>
+        <Link to="/dashboard" className="logo" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <img src="/logo.png" alt="ControlFin Logo" style={{ height: '32px' }} />
+          ControlFin
+        </Link>
         
         {user && (
           <nav className="nav">

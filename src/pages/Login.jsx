@@ -28,7 +28,9 @@ export const Login = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>ControlFin</h1>
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <img src="/logo.png" alt="ControlFin Logo" style={{ height: '64px', margin: '0 auto' }} />
+        </div>
         <h2>Entrar</h2>
         
         {error && <div className="error-message">{error}</div>}

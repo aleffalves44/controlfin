@@ -42,7 +42,9 @@ export const Register = () => {
     return (
       <div className="auth-container">
         <div className="auth-card">
-          <h1>ControlFin</h1>
+          <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+            <img src="/logo.png" alt="ControlFin Logo" style={{ height: '64px', margin: '0 auto' }} />
+          </div>
           <div className="success-message">
             <p>Conta criada com sucesso!</p>
             <p>Verifique seu email para confirmar o cadastro.</p>
@@ -56,7 +58,9 @@ export const Register = () => {
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h1>ControlFin</h1>
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <img src="/logo.png" alt="ControlFin Logo" style={{ height: '64px', margin: '0 auto' }} />
+        </div>
         <h2>Criar Conta</h2>
         
         {error && <div className="error-message">{error}</div>}
