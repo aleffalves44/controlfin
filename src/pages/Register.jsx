@@ -43,7 +43,7 @@ export const Register = () => {
       <div className="auth-container">
         <div className="auth-card">
           <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-            <img src="/logo.png" alt="ControlFin Logo" style={{ height: '64px', margin: '0 auto' }} />
+            <img src="/logo.png" alt="ControlFin Logo" style={{ height: '48px', margin: '0 auto' }} />
           </div>
           <div className="success-message">
             <p>Conta criada com sucesso!</p>
@@ -59,7 +59,7 @@ export const Register = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <img src="/logo.png" alt="ControlFin Logo" style={{ height: '64px', margin: '0 auto' }} />
+          <img src="/logo.png" alt="ControlFin Logo" style={{ height: '48px', margin: '0 auto' }} />
         </div>
         <h2>Criar Conta</h2>
         
