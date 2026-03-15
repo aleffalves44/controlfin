@@ -29,7 +29,7 @@ export const Login = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <img src="src/assets/logo.png" alt="ControlFin Logo" style={{ height: '48px', margin: '0 auto' }} />
+          <img src="/logo.png" alt="ControlFin Logo" style={{ height: '48px', margin: '0 auto' }} />
         </div>
         <h2>Entrar</h2>
 
