@@ -29,12 +29,12 @@ export const Login = () => {
     <div className="auth-container">
       <div className="auth-card">
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
-          <img src="/logo.png" alt="ControlFin Logo" style={{ height: '48px', margin: '0 auto' }} />
+          <img src="src/assets/logo.png" alt="ControlFin Logo" style={{ height: '48px', margin: '0 auto' }} />
         </div>
         <h2>Entrar</h2>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>
@@ -45,7 +45,7 @@ export const Login = () => {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label>Senha</label>
             <input
@@ -55,12 +55,12 @@ export const Login = () => {
               required
             />
           </div>
-          
+
           <button type="submit" disabled={loading} className="btn-primary">
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
-        
+
         <p className="auth-link">
           Não tem conta? <Link to="/register">Criar conta</Link>
         </p>
